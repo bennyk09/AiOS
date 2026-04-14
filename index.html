@@ -29,7 +29,7 @@ body{
 h1{
   font-size:64px;
   font-weight:600;
-  margin-top: -150px;
+  margin-top:-150px;
 }
 
 p{
@@ -37,7 +37,7 @@ p{
   margin-bottom:70px;
 }
 
-/* CIRCLE (UNCHANGED SIZE) */
+/* CIRCLE */
 .circle{
   width:200px;
   height:200px;
@@ -49,6 +49,7 @@ p{
   cursor:pointer;
   position:relative;
   overflow:hidden;
+  padding:5px; /* ✅ inner spacing */
 }
 
 /* COMMON */
@@ -62,7 +63,7 @@ p{
   transform:scale(0.7);
 }
 
-/* 🔥 BIGGER + SMOOTH PLAY BUTTON */
+/* PLAY */
 .play{
   width:100px;
   height:100px;
@@ -85,11 +86,15 @@ p{
 /* BARS */
 .bars{
   gap:12px;
+  height:100%;
+  display:flex;
+  align-items:flex-end; /* grow from bottom */
 }
 
 .bar{
   width:18px;
   height:40px;
+  max-height:100%; /* prevent overflow */
   background:#fff;
   border-radius:20px;
   transition:height 0.1s linear;
@@ -205,7 +210,9 @@ function animate(){
   const bars = document.querySelectorAll('.bar');
 
   bars.forEach((bar,i)=>{
-    let height = 30 + volume * 200 * (i+1);
+    let maxHeight = 190; // safe limit inside circle
+    let height = 30 + volume * 120 * (i+1);
+    height = Math.min(height, maxHeight);
     bar.style.height = height + "px";
   });
 }
