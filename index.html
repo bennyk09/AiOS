@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AiOS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Outfit',sans-serif;
+}
+
+body{
+  background:#fff;
+  color:#333;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+/* TEXT */
+h1{
+  font-size:64px;
+  font-weight:600;
+  margin-top: -150px;
+}
+
+p{
+  font-size:14px;
+  margin-bottom:70px;
+}
+
+/* CIRCLE (UNCHANGED SIZE) */
+.circle{
+  width:200px;
+  height:200px;
+  background:#333;
+  border-radius:50%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+
+/* COMMON */
+.play, .pause, .bars{
+  position:absolute;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  transition:all 0.4s cubic-bezier(0.22,1,0.36,1);
+  opacity:0;
+  transform:scale(0.7);
+}
+
+/* 🔥 BIGGER + SMOOTH PLAY BUTTON */
+.play{
+  width:100px;
+  height:100px;
+  border-radius:10px;
+  background: url(play.png) no-repeat center / 75%;
+}
+
+/* PAUSE */
+.pause{
+  gap:18px;
+}
+
+.pause div{
+  width:22px;
+  height:80px;
+  background:#fff;
+  border-radius:12px;
+}
+
+/* BARS */
+.bars{
+  gap:12px;
+}
+
+.bar{
+  width:18px;
+  height:40px;
+  background:#fff;
+  border-radius:20px;
+  transition:height 0.1s linear;
+}
+
+/* STATES */
+.circle.idle .play{
+  opacity:1;
+  transform:scale(1);
+}
+
+.circle.active .bars{
+  opacity:1;
+  transform:scale(1);
+}
+
+.circle.paused .pause{
+  opacity:1;
+  transform:scale(1);
+}
+</style>
+</head>
+
+<body>
+
+<h1>AiOS</h1>
+<p>Version 1.0</p>
+
+<div class="circle idle" onclick="toggle()">
+
+  <div class="play"></div>
+
+  <div class="bars">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+
+  <div class="pause">
+    <div></div>
+    <div></div>
+  </div>
+
+</div>
+
+<script>
+let audioContext, analyser, dataArray, stream;
+let running = false;
+
+async function startAudio(){
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  await audioContext.resume();
+
+  stream = await navigator.mediaDevices.getUserMedia({audio:true});
+  const source = audioContext.createMediaStreamSource(stream);
+
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+  analyser.smoothingTimeConstant = 0.85;
+
+  source.connect(analyser);
+
+  dataArray = new Uint8Array(analyser.fftSize);
+
+  animate();
+}
+
+function stopAudio(){
+  if(stream){
+    stream.getTracks().forEach(track => track.stop());
+  }
+  if(audioContext){
+    audioContext.close();
+  }
+}
+
+function toggle(){
+  const circle = document.querySelector('.circle');
+
+  if(circle.classList.contains('idle')){
+    startAudio();
+    circle.classList.replace('idle','active');
+    running = true;
+  }
+  else if(circle.classList.contains('active')){
+    stopAudio();
+    circle.classList.replace('active','paused');
+    running = false;
+  }
+  else{
+    startAudio();
+    circle.classList.replace('paused','active');
+    running = true;
+  }
+}
+
+function animate(){
+  if(!running) return;
+
+  requestAnimationFrame(animate);
+
+  analyser.getByteTimeDomainData(dataArray);
+
+  let sum = 0;
+  for(let i=0;i<dataArray.length;i++){
+    let v = (dataArray[i] - 128) / 128;
+    sum += v*v;
+  }
+
+  let volume = Math.sqrt(sum / dataArray.length);
+
+  const bars = document.querySelectorAll('.bar');
+
+  bars.forEach((bar,i)=>{
+    let height = 30 + volume * 200 * (i+1);
+    bar.style.height = height + "px";
+  });
+}
+</script>
+
+</body>
+</html>
